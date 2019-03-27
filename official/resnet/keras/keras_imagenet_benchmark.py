@@ -101,6 +101,8 @@ class Resnet50KerasAccuracy(keras_benchmark.KerasBenchmark):
     FLAGS.dtype = 'fp16'
     FLAGS.enable_eager = True
     FLAGS.enable_xla = True
+    # Thread tuning to improve performance.
+    FLAGS.tf_gpu_thread_mode = 'gpu_private'
     self._run_and_report_benchmark()
 
   def _run_and_report_benchmark(self):
@@ -190,7 +192,7 @@ class Resnet50KerasBenchmarkBase(keras_benchmark.KerasBenchmark):
     self._run_and_report_benchmark()
 
   def benchmark_1_gpu_fp16(self):
-    """Test Keras model with 1 GPU and fp16"""
+    """Test Keras model with 1 GPU and fp16."""
     self._setup()
 
     FLAGS.num_gpus = 1
@@ -269,15 +271,15 @@ class Resnet50KerasBenchmarkBase(keras_benchmark.KerasBenchmark):
     FLAGS.enable_xla = True
     FLAGS.distribution_strategy = 'default'
     FLAGS.model_dir = self._get_model_dir('benchmark_xla_8_gpu')
-    # TODO(haoyuzhang): Set size to 128 per GPU when multi-GPU XLA OOM is fixed
-    FLAGS.batch_size = 64 * 8  # 8 GPUs
+    FLAGS.batch_size = 128 * 8  # 8 GPUs
     self._run_and_report_benchmark()
 
   def benchmark_8_gpu_fp16(self):
-    """Test Keras model with 8 GPUs and fp16"""
+    """Test Keras model with 8 GPUs and fp16."""
     self._setup()
 
     FLAGS.num_gpus = 8
+    FLAGS.dtype = 'fp16'
     FLAGS.enable_eager = True
     FLAGS.distribution_strategy = 'default'
     FLAGS.model_dir = self._get_model_dir('benchmark_8_gpu_fp16')
@@ -285,15 +287,46 @@ class Resnet50KerasBenchmarkBase(keras_benchmark.KerasBenchmark):
     self._run_and_report_benchmark()
 
   def benchmark_xla_8_gpu_fp16(self):
-    """Test Keras model with XLA, 8 GPUs and fp16"""
+    """Test Keras model with XLA, 8 GPUs and fp16."""
     self._setup()
 
     FLAGS.num_gpus = 8
+    FLAGS.dtype = 'fp16'
     FLAGS.enable_eager = True
     FLAGS.enable_xla = True
     FLAGS.distribution_strategy = 'default'
     FLAGS.model_dir = self._get_model_dir('benchmark_xla_8_gpu_fp16')
     FLAGS.batch_size = 256 * 8  # 8 GPUs
+    self._run_and_report_benchmark()
+
+  def benchmark_xla_8_gpu_fp16_tweaked(self):
+    """Test Keras model with manual config tuning, XLA, 8 GPUs and fp16."""
+    self._setup()
+
+    FLAGS.num_gpus = 8
+    FLAGS.dtype = 'fp16'
+    FLAGS.enable_eager = True
+    FLAGS.enable_xla = True
+    FLAGS.distribution_strategy = 'default'
+    FLAGS.model_dir = self._get_model_dir('benchmark_xla_8_gpu_fp16_tweaked')
+    FLAGS.batch_size = 256 * 8  # 8 GPUs
+    FLAGS.tf_gpu_thread_mode = 'gpu_private'
+    self._run_and_report_benchmark()
+
+  def benchmark_xla_8_gpu_fp16_tensorboard_tweaked(self):
+    """Test to track Tensorboard performance overhead."""
+    self._setup()
+
+    FLAGS.num_gpus = 8
+    FLAGS.dtype = 'fp16'
+    FLAGS.enable_eager = True
+    FLAGS.enable_xla = True
+    FLAGS.distribution_strategy = 'default'
+    FLAGS.model_dir = self._get_model_dir(
+        'benchmark_xla_8_gpu_fp16_tensorboard_tweaked')
+    FLAGS.batch_size = 256 * 8  # 8 GPUs
+    FLAGS.tf_gpu_thread_mode = 'gpu_private'
+    FLAGS.enable_tensorboard = True
     self._run_and_report_benchmark()
 
   def benchmark_graph_8_gpu(self):
@@ -316,8 +349,37 @@ class Resnet50KerasBenchmarkBase(keras_benchmark.KerasBenchmark):
     FLAGS.enable_xla = True
     FLAGS.distribution_strategy = 'default'
     FLAGS.model_dir = self._get_model_dir('benchmark_graph_xla_8_gpu')
-    # TODO(haoyuzhang): Set size to 128 per GPU when multi-GPU XLA OOM is fixed
-    FLAGS.batch_size = 64 * 8  # 8 GPUs
+    FLAGS.batch_size = 128 * 8  # 8 GPUs
+    self._run_and_report_benchmark()
+
+  def benchmark_graph_xla_8_gpu_fp16(self):
+    """Test Keras model in legacy graph mode with XLA, 8 GPUs and fp16."""
+    self._setup()
+
+    FLAGS.num_gpus = 8
+    FLAGS.dtype = 'fp16'
+    FLAGS.enable_eager = False
+    FLAGS.enable_xla = True
+    FLAGS.distribution_strategy = 'default'
+    FLAGS.model_dir = self._get_model_dir('benchmark_graph_xla_8_gpu_fp16')
+    FLAGS.batch_size = 256 * 8  # 8 GPUs
+    self._run_and_report_benchmark()
+
+  def benchmark_graph_xla_8_gpu_fp16_tweaked(self):
+    """Test Keras model in legacy graph mode with manual config tuning, XLA,
+       8 GPUs and fp16.
+    """
+    self._setup()
+
+    FLAGS.num_gpus = 8
+    FLAGS.dtype = 'fp16'
+    FLAGS.enable_eager = False
+    FLAGS.enable_xla = True
+    FLAGS.distribution_strategy = 'default'
+    FLAGS.model_dir = self._get_model_dir(
+        'benchmark_graph_xla_8_gpu_fp16_tweaked')
+    FLAGS.batch_size = 256 * 8  # 8 GPUs
+    FLAGS.tf_gpu_thread_mode = 'gpu_private'
     self._run_and_report_benchmark()
 
   def fill_report_object(self, stats):
